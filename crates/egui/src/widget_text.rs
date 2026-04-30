@@ -491,7 +491,7 @@ pub enum WidgetText {
     ///
     /// We have this as a special case, as it is the common-case,
     /// and it uses less memory than [`Self::RichText`].
-    Text(String),
+    Text(Arc<String>),
 
     /// Text and optional style choices for it.
     ///
@@ -533,7 +533,7 @@ impl std::fmt::Debug for WidgetText {
 
 impl Default for WidgetText {
     fn default() -> Self {
-        Self::Text(String::new())
+        Self::Text(Arc::new(String::new()))
     }
 }
 
@@ -569,7 +569,9 @@ impl WidgetText {
         F: FnOnce(RichText) -> RichText,
     {
         match self {
-            Self::Text(text) => Self::RichText(Arc::new(f(RichText::new(text)))),
+            Self::Text(text) => {
+                Self::RichText(Arc::new(f(RichText::new(Arc::unwrap_or_clone(text)))))
+            }
             Self::RichText(text) => Self::RichText(Arc::new(f(Arc::unwrap_or_clone(text)))),
             other => other,
         }
@@ -695,7 +697,7 @@ impl WidgetText {
     ) -> Arc<LayoutJob> {
         match self {
             Self::Text(text) => Arc::new(LayoutJob::simple_format(
-                text,
+                Arc::unwrap_or_clone(text),
                 TextFormat {
                     font_id: FontSelection::Default.resolve(style),
                     color: crate::Color32::PLACEHOLDER,
@@ -747,7 +749,7 @@ impl WidgetText {
                     .override_text_color
                     .unwrap_or(crate::Color32::PLACEHOLDER);
                 let mut layout_job = LayoutJob::simple_format(
-                    text,
+                    Arc::unwrap_or_clone(text),
                     TextFormat {
                         // We want the style overrides to take precedence over the fallback font
                         font_id: FontSelection::default()
@@ -782,42 +784,42 @@ impl WidgetText {
 impl From<&str> for WidgetText {
     #[inline]
     fn from(text: &str) -> Self {
-        Self::Text(text.to_owned())
+        Self::Text(Arc::new(text.to_owned()))
     }
 }
 
 impl From<&String> for WidgetText {
     #[inline]
     fn from(text: &String) -> Self {
-        Self::Text(text.clone())
+        Self::Text(Arc::new(text.clone()))
     }
 }
 
 impl From<String> for WidgetText {
     #[inline]
     fn from(text: String) -> Self {
-        Self::Text(text)
+        Self::Text(Arc::new(text))
     }
 }
 
 impl From<&Box<str>> for WidgetText {
     #[inline]
     fn from(text: &Box<str>) -> Self {
-        Self::Text(text.to_string())
+        Self::Text(Arc::new(text.to_string()))
     }
 }
 
 impl From<Box<str>> for WidgetText {
     #[inline]
     fn from(text: Box<str>) -> Self {
-        Self::Text(text.into())
+        Self::Text(Arc::new(text.into_string()))
     }
 }
 
 impl From<Cow<'_, str>> for WidgetText {
     #[inline]
     fn from(text: Cow<'_, str>) -> Self {
-        Self::Text(text.into_owned())
+        Self::Text(Arc::new(text.into_owned()))
     }
 }
 
