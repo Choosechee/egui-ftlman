@@ -250,7 +250,7 @@ impl ComboBox {
             ir.response.widget_info(|| {
                 let mut info = WidgetInfo::new(WidgetType::ComboBox);
                 info.enabled = ui.is_enabled();
-                info.current_text_value = Some(selected_text.text().to_owned());
+                info.current_text_value = Some(selected_text.text().into());
                 info
             });
             if let Some(label) = label {
